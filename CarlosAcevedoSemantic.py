@@ -82,7 +82,7 @@ class Lexer(object):
 
     t_DEF = r'(def)'
     t_VAR = r'(var)'
-    t_INT = r'(Int)'
+    # t_INT = r'(Int)'
     t_IF = r'(if)'
     t_ELSE = r'(else)'
     t_LPAREN = r'\('
@@ -121,7 +121,11 @@ class Lexer(object):
          r'\n+'
          t.lexer.lineno += len(t.value)
 
-
+    def t_INT(self, t):
+        r'\d+'
+        t.value = int(t.value)
+        t.type = self.reserved.get(t.value,'INT')
+        return t
 
     def t_ID(self, t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -151,7 +155,7 @@ lexObj.build()
 tokens=lexObj.tokens
 
 
-
+start = "defdefs"
 def p_defdefs(p):
     '''defdefs : defdef defdefs
                 | defdef'''
@@ -202,12 +206,15 @@ def p_defdefsopt(p):
 def p_expras(p):
     '''expras : expra SEMI expras
                 | expra'''
-    if type(p[0])!= type(p[3]):
+    if len(p) == 2:
+        p[0]= p[1]
+    elif type(p[0])!= type(p[3]):
         print(" p_expras violation: parent expras and child expras MUST have the same type.")
 
 def p_expra(p):
     '''expra : ID BECOMES expr
                 | expr'''
+    
     if len(p) == 4:
         if type(p[1]) != type(p[3]):
             print("p_expra violation: ID and child expr type MUST be the same.")
@@ -218,10 +225,15 @@ def p_expr(p):
                 | term
                 | expr PLUS term
                 | expr MINUS term'''
-    if type(p[1]) == "term":
-        if type(p[0]) != type(p[1]):
-            print("Error in types")
-    if p[2] == "PLUS" or p[2] == "MINUS":
+    if len(p)==2:
+        # if type(p[0]) != type(p[1]):
+        #     print("p_expr: Error in types: ")
+        #     print(p[0])
+        #     print("vs. ")
+        #     print(p[1])
+        # else:
+            p[0] = p[1]
+    elif p[2] == "PLUS" or p[2] == "MINUS":
         if type(p[1])!= int or type(p[3]) != int:
             print("Child expr and child term must be int")
         elif p[2] == "PLUS":
@@ -240,9 +252,16 @@ def p_term(p):
             | term STAR factor
             | term SLASH factor
             | term PCT factor'''
-    if type(p[0]) != type(p[1]):
-        print("Error in types")
-    if p[2] == "STAR" or p[2] == "SLASH" or p[2] == "PCT":
+    # if type(p[0]) != type(p[1]):
+    #     print("p_term: Error in types")
+    #     print(p[0])
+    #     print("vs. ")
+    #     print(p[1])
+
+    if len(p) == 2:
+        p[0] = p[1]
+    
+    elif p[2] == "STAR" or p[2] == "SLASH" or p[2] == "PCT":
         if type(p[1])!= int or type(p[3]) != int:
             print("Child term and child factor must be int")
 
@@ -253,11 +272,15 @@ def p_factor(p):
                 | factor LPAREN argsopt RPAREN'''
 
 
-    if type(p[0]) != type(p[1]):
-        print("Error in types")
-    else:
+    # if type(p[0]) != type(p[1]):
+    #     print("p_factor: Error in types")
+    #     print(p[0])
+    #     print("vs. ")
+    #     print(p[1])
+    # else:
+    if len(p) == 2:
         p[0] = p[1]
-    if p[1] == 'NUM' and type(p[1])!= int:
+    if p[1] == 'NUM' and type(p[1])!= "INT":
         print("NUM cannot be anything other than INT")
     else:
         p[0] = p[1]
@@ -323,7 +346,7 @@ def p_args(p):
 
 # Error rule for syntax errors
 def p_error(p):
-    
+    print("Syntax error at: ")
     print (p)
 
     
@@ -331,8 +354,10 @@ if __name__ == "__main__":
      
      parser = yacc.yacc()
      
-     textfile = open("TestProgram2.txt", 'r', errors='ignore').read()
-     print(parser.parse(textfile))
+     #textfile = open("TestProgram2.txt", 'r', errors='ignore').read()
+     analysis = "def f(a:Int, b:Int):Int = { var c:Int; def g(a:Int, b:(Int)=>Int):Int = { b(a) } } def h(c:Int):Int = { def g():Int = { c-b } g() } c = a+b; g(c,h) }"
+     #textfile = input()
+     parser.parse(analysis)
 
 
 

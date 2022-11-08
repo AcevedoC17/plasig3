@@ -117,9 +117,10 @@ class Lexer(object):
     }
 
 
-    def t_INT(self,t):
+    def t_INT(self, t):
         r'\d+'
         t.value = int(t.value)
+        t.type = self.reserved.get(t.value,'INT')
         return t
 
 
@@ -175,10 +176,10 @@ def p_defdefs(p):
 
 def p_defdef(p):
     'defdef : DEF ID LPAREN parmsopt RPAREN COLON type BECOMES LBRACE vardefsopt defdefsopt expras RBRACE'
-    if type(p[7])!=type(p[12]):
-        print(" p_defdef violation : Error in types")
+    if p.slice[7].type!=p.slice[12].type:
+        print(" p_defdef violation : Error in types",p.slice[7].type, p.slice[12].type)
     else:
-        p[0]=[p[1],p[2],p[4],p[7],'=',p[10],p[11],p[12]]
+        p[0]=[p[4], p[7], p[10], p[11] , p[12]]
     pass
 
 def p_parmsopt(p):
@@ -308,7 +309,7 @@ def p_factor(p):
     if(len(p)==2):
         p[0] = p[1]
     elif(len(p)==4):
-        p[0]=p[2]
+        p[0] = p[2]
     elif(len(p)==5):
         p[0]=[p[1], p[3]]
     pass
@@ -366,5 +367,6 @@ if __name__ == "__main__":
      
      parser = yacc.yacc()
      analysis = "def f(a:Int, b:Int):Int = { var c:Int; def g(a:Int, b:(Int)=>Int):Int = { b(a) } } def h(c:Int):Int = { def g():Int = { c-b } g() } c = a+b; g(c,h) }"
-     textfile = input()
-     print(parser.parse(textfile))
+     #textfile = input()
+     parser.parse(analysis)
+
