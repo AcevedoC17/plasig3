@@ -82,7 +82,6 @@ class Lexer(object):
 
     t_DEF = r'(def)'
     t_VAR = r'(var)'
-    t_INT = r'(Int)'
     t_IF = r'(if)'
     t_ELSE = r'(else)'
     t_LPAREN = r'\('
@@ -116,6 +115,14 @@ class Lexer(object):
         'else' : 'ELSE',
         'Int' : 'INT'
     }
+
+
+    def t_INT(self,t):
+        r'\d+'
+        t.value = int(t.value)
+        return t
+
+
 
     def t_newline(self,t):
          r'\n+'
@@ -155,13 +162,12 @@ tokens=lexObj.tokens
 
 
 
-start = "defdefs" # This is the important thing.
+start = "defdefs" 
 
 def p_defdefs(p):
     '''defdefs : defdef defdefs
               | defdef'''
     if len(p)==3:
-        #p[1].append(p[2])
         p[0]=[p[1], p[2]]
     else:
         p[0]=p[1]
@@ -185,14 +191,14 @@ def p_parms(p):
     '''parms : vardef COMMA parms
             | vardef'''
     if len(p)==4:
-        p[0]=[p[0]]+p[3]
+        p[0]=[p[0] , p[3]]
     else:
         p[0]=p[1]
     pass
 
 def p_vardef(p):
     'vardef : ID COLON type'
-    p[0]=[p[1],p[2], p[3]]
+    p[0]=p[3]
     pass
 
 def p_type(p):
@@ -201,7 +207,7 @@ def p_type(p):
     if(len(p)==2):
         p[0]=p[1]
     else:
-        p[0]=[p[1],'=>',p[5]]
+        p[0]=[p[2], p[5]]
     pass
 
 def p_typesopt(p):
@@ -214,7 +220,7 @@ def p_types(p):
     '''types : type COMMA types
             | type'''
     if len(p)==4:
-        p[0]=[p[1]]+p[3]
+        p[0]=[p[1], p[3]]
     else:
         p[0]=p[1]
     pass
@@ -223,8 +229,7 @@ def p_vardefsopt(p):
     '''vardefsopt : VAR vardef SEMI vardefsopt
                   | empty'''
     if(len(p)==5):
-        #p[0]=[[p[1],p[2]]].append(p[4])
-        p[0] = [p[1], p[2], p[3], p[4]]
+        p[0] = [p[2], p[4]]
     else:
         p[0]=p[1]
     pass
@@ -239,9 +244,9 @@ def p_expras(p):
     '''expras : expra SEMI expras
               | expra'''
     if(len(p)==4):
-        p[0]=[p[0]]+p[3]
+        p[0]=[p[1], p[3]]
     else:
-        p[0]=[p[1]]
+        p[0]=p[1]
     pass
 
 def p_expra(p):
@@ -251,7 +256,7 @@ def p_expra(p):
         if type(p[1])!=type(p[3]):
             print("p_expra : Error in types")
         else:
-            p[1]=p[3]#Standby
+            p[0]=p[3]
     else:
         p[0]=p[1]
     pass
@@ -265,25 +270,14 @@ def p_expr(p):
         if type(p[6])!=type(p[10]):
             print("p_ expr: Error in types")
         else:
-            if(p[3]):
-                p[6]
-            else:
-                p[10]
+            p[0] = [p[3], p[6], p[10]]
     elif(len(p)==2): # 
         p[0]=p[1]
     elif(len(p)==4):
-        # if type(p[1])!= "INT" and type(p[3]) != "INT":
-        #     print("p_expr : Types must be Int")
-        #     print(p.slice[1].type)
-        #     print("p[1] type is")
-        #     print(p.slice[1])
-        #     print("p[3] type is")
-        #     print(p.slice[3].type)
-        # else:
-            if p[2]=='+':
-                p[0]=p[1] + p[3]
-            elif p[2]=='-':
-                    p[0]=p[1] - p[3]
+            if p[2] == '+':
+                p[0] = [p[1], p[3]]
+            elif p[2] =='-':
+                    p[0] = [p[1], p[3]]
     pass 
 
 def p_term(p):
@@ -294,7 +288,6 @@ def p_term(p):
     if(len(p)==2):
         p[0] = p[1]
     if(len(p)==4):
-        # if type(p[1]) !='int' and type(p[3])!='int':
         if type(p[1]) != type(p[3]):
             print("p_term : Types must be Int")
         else:
@@ -313,17 +306,11 @@ def p_factor(p):
               | LPAREN expr RPAREN
               | factor LPAREN argsopt RPAREN'''
     if(len(p)==2):
-        # if type(p[0])!=type(p[1]):
-        #     print("p_factor : Error in types")
-        # if p[1]=='ID':
-        #     p[0]=['id',p[1]]
-        # else:
-        #         p[0]=p[1]
         p[0] = p[1]
     elif(len(p)==4):
-        p[0]=["(", p[2], ")"]
+        p[0]=p[2]
     elif(len(p)==5):
-        p[0]=[p[1], "(", p[3], ")"]
+        p[0]=[p[1], p[3]]
     pass
 
 def p_test(p):
@@ -357,18 +344,20 @@ def p_args(p):
     '''args : expr COMMA args
             | expr'''
     if(len(p)==4):
-        p[0]=[p[0] ,",", p[3]]
+        p[0]=[p[1] , p[3]]
     else:
         p[0]=p[1]
     pass
 
 def p_error(p):
-    print("Syntax error in input: " + str(p))
-    pass
+    if p:
+        print("Syntax error at token", p.type)
+        pass
+    else:
+        print("Syntax error at EOF")
  
 def p_empty(p):
     'empty :'
-    p[0]=None
     pass
 
 
@@ -377,7 +366,5 @@ if __name__ == "__main__":
      
      parser = yacc.yacc()
      analysis = "def f(a:Int, b:Int):Int = { var c:Int; def g(a:Int, b:(Int)=>Int):Int = { b(a) } } def h(c:Int):Int = { def g():Int = { c-b } g() } c = a+b; g(c,h) }"
-     #textfile = open("Test1.txt", 'r', errors='ignore').read()
      textfile = input()
      print(parser.parse(textfile))
-     print(analysis[134])
